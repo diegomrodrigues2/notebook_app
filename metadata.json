@@ -1,0 +1,5 @@
+{
+  "name": "React Vector Drawing App",
+  "description": "An interactive vector drawing application inspired by Excalidraw, built with React, SVG, and TypeScript. This initial version allows users to draw basic shapes on an infinite canvas.",
+  "requestFramePermissions": []
+}
