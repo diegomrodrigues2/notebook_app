@@ -73,6 +73,17 @@ export function Canvas({
     : null) as (TextElement & { pageId: string, pageOffset: number }) | null;
 
 
+  if (!leftPage && !rightPage) {
+    return (
+      <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#f1f3f5' }}>
+        <div className="text-center text-gray-500">
+            <h2 className="text-2xl font-semibold">Workspace Vazio</h2>
+            <p className="mt-2">Crie um novo caderno para começar.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full" style={{ backgroundColor: '#f1f3f5' }}>
       <svg

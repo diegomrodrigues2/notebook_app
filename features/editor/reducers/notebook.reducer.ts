@@ -51,45 +51,68 @@ export function notebookReducer(state: EditorState, action: EditorAction): Edito
         case 'DELETE_PAGE': {
             const { notebookId, pageId } = action.payload;
 
-            // Guard: Prevent deleting the last page in the entire workspace.
-            const totalPages = present.reduce((sum, notebook) => sum + notebook.pages.length, 0);
-            if (totalPages <= 1) {
-                return state;
+            // 1) Clone notebooks shallowly to work immutably
+            let newPresent = state.history.present.map(n => ({ ...n, pages: [...n.pages] }));
+
+            // 2) Find notebook & page indices
+            const nbIdx = newPresent.findIndex(n => n.id === notebookId);
+            if (nbIdx === -1) return state;
+
+            const pageIdx = newPresent[nbIdx].pages.findIndex(p => p.id === pageId);
+            if (pageIdx === -1) return state;
+
+            // 3) Remove the page
+            newPresent[nbIdx].pages.splice(pageIdx, 1);
+
+            // 4) If that notebook is now empty, remove the notebook
+            const notebookEmptied = newPresent[nbIdx]?.pages.length === 0;
+            if (notebookEmptied) {
+                newPresent.splice(nbIdx, 1);
             }
 
-            // Create a flat list of all pages to find the original index of the deleted page.
-            const allPagesFlat = present.flatMap(notebook =>
-                notebook.pages.map(page => ({ notebookId: notebook.id, pageId: page.id }))
-            );
-            const deletedPageIndex = allPagesFlat.findIndex(p => p.pageId === pageId);
-            if (deletedPageIndex === -1) return state; // Page not found
+            // 5) If everything is gone, bootstrap a clean workspace to keep UI stable
+            if (newPresent.length === 0) {
+                const newNotebookId = generateId();
+                const newPageId = generateId();
+                newPresent = [
+                {
+                    id: newNotebookId,
+                    name: 'My First Notebook',
+                    pages: [{ id: newPageId, name: 'Page 1', elements: [] }],
+                },
+                ];
+                return {
+                ...commitHistory(state, newPresent),
+                activeNotebookId: newNotebookId,
+                activePageId: newPageId,
+                selectedElement: null,
+                };
+            }
 
-            // Create a new state by filtering out the deleted page and any notebooks that become empty.
-            const newPresent = present
-                .map(notebook => ({
-                    ...notebook,
-                    pages: notebook.pages.filter(page => page.id !== pageId),
-                }))
-                .filter(notebook => notebook.pages.length > 0);
-
-            // Determine the new active page, but only if the currently active page was the one deleted.
+            // 6) Determine new active notebook/page IF the deleted page was active
             let newActiveNotebookId = state.activeNotebookId;
             let newActivePageId = state.activePageId;
 
             if (state.activePageId === pageId) {
-                const newPagesFlat = newPresent.flatMap(notebook =>
-                    notebook.pages.map(page => ({ notebookId: notebook.id, pageId: page.id }))
-                );
-
-                // The new active page should be the one before the deleted page.
-                // This is safe because the list is only ever one item shorter.
-                const newActiveIndex = Math.max(0, deletedPageIndex - 1);
-                
-                // There will always be at least one page because of the totalPages guard.
-                const newActivePageInfo = newPagesFlat[newActiveIndex];
-
-                newActiveNotebookId = newActivePageInfo.notebookId;
-                newActivePageId = newActivePageInfo.pageId;
+                const stillSameNotebookIdx = newPresent.findIndex(n => n.id === notebookId);
+                if (stillSameNotebookIdx !== -1) {
+                // Notebook still exists; choose a neighbor page in this notebook
+                const nb = newPresent[stillSameNotebookIdx];
+                // Prefer previous page; if none, stick to the new first page
+                let nextIdx = pageIdx - 1;
+                if (nextIdx < 0) nextIdx = 0;
+                if (nextIdx >= nb.pages.length) nextIdx = nb.pages.length - 1; // safety
+                newActiveNotebookId = nb.id;
+                newActivePageId = nb.pages[nextIdx].id;
+                } else {
+                // Notebook was removed; choose a nearby notebook
+                const fallbackNbIdx = Math.min(nbIdx, newPresent.length - 1);
+                const nb = newPresent[fallbackNbIdx];
+                // Pick a reasonable page index near the old one
+                let nextIdx = Math.min(Math.max(pageIdx - 1, 0), nb.pages.length - 1);
+                newActiveNotebookId = nb.id;
+                newActivePageId = nb.pages[nextIdx].id;
+                }
             }
 
             return {
@@ -99,6 +122,7 @@ export function notebookReducer(state: EditorState, action: EditorAction): Edito
                 selectedElement: null,
             };
         }
+
 
         case 'SELECT_PAGE': {
             if (state.activePageId === action.payload.pageId) return state;

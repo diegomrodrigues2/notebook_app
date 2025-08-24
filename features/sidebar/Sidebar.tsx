@@ -88,12 +88,6 @@ export function Sidebar({ notebooks, activeNotebookId, activePageId, dispatch, i
         setOpenedAddPageMenu(null);
     };
     const handleSelectPage = (notebookId: string, pageId: string) => dispatch({ type: 'SELECT_PAGE', payload: { notebookId, pageId } });
-    
-    const handleDeletePage = (notebookId: string, pageId: string) => {
-        if (window.confirm('Are you sure you want to delete this page? This action cannot be undone.')) {
-            dispatch({ type: 'DELETE_PAGE', payload: { notebookId, pageId } });
-        }
-    };
 
     if (!isOpen) {
         return (
@@ -134,33 +128,36 @@ export function Sidebar({ notebooks, activeNotebookId, activePageId, dispatch, i
                         </div>
                         {expandedNotebooks.has(notebook.id) && (
                             <div className="pl-4 mt-1 space-y-1">
-                                {notebook.pages.map(page => (
-                                    <div 
-                                        key={page.id}
-                                        className={`flex items-center justify-between p-2 rounded-md text-sm group ${activePageId === page.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                                    >
-                                        <div
-                                            onDoubleClick={() => handleStartEditing('page', page.id, page.name)}
-                                            onClick={() => handleSelectPage(notebook.id, page.id)}
-                                            className={`flex-1 cursor-pointer truncate ${activePageId === page.id ? 'text-blue-800 font-semibold' : 'text-gray-600'}`}
-                                            title={page.name}
+                                {notebook.pages.map(page => {
+                                    return (
+                                        <div 
+                                            key={page.id}
+                                            className={`flex items-center justify-between p-2 rounded-md text-sm group ${activePageId === page.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
                                         >
-                                            {editing?.type === 'page' && editing.id === page.id ? (
-                                                <input ref={inputRef} type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} onBlur={handleFinishEditing} onKeyDown={handleKeyDown} onClick={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()} className="w-full bg-gray-50 border border-blue-400 rounded-md px-1 -mx-1 text-sm"/>
-                                            ) : (
-                                                page.name
-                                            )}
+                                            <div
+                                                onDoubleClick={() => handleStartEditing('page', page.id, page.name)}
+                                                onClick={() => handleSelectPage(notebook.id, page.id)}
+                                                className={`flex-1 cursor-pointer truncate ${activePageId === page.id ? 'text-blue-800 font-semibold' : 'text-gray-600'}`}
+                                                title={page.name}
+                                            >
+                                                {editing?.type === 'page' && editing.id === page.id ? (
+                                                    <input ref={inputRef} type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} onBlur={handleFinishEditing} onKeyDown={handleKeyDown} onClick={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()} className="w-full bg-gray-50 border border-blue-400 rounded-md px-1 -mx-1 text-sm"/>
+                                                ) : (
+                                                    page.name
+                                                )}
+                                            </div>
+                                            <button 
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); dispatch({ type: 'DELETE_PAGE', payload: { notebookId: notebook.id, pageId: page.id } }); }}
+                                                className="ml-2 shrink-0 text-gray-500 opacity-0 group-hover:opacity-100 hover:text-red-600 focus:opacity-100"
+                                                aria-label={`Delete page ${page.name}`}
+                                                title="Delete page"
+                                            >
+                                                <TrashIcon />
+                                            </button>
                                         </div>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); handleDeletePage(notebook.id, page.id); }}
-                                            className="ml-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-600 focus:opacity-100 shrink-0"
-                                            aria-label={`Delete page ${page.name}`}
-                                            title="Delete page"
-                                        >
-                                            <TrashIcon />
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                                 <div className="relative" ref={menuRef}>
                                     <button onClick={() => setOpenedAddPageMenu(openedAddPageMenu === notebook.id ? null : notebook.id)} className="flex items-center gap-2 p-2 rounded-md text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-200 w-full mt-1">
                                         <PlusIcon />
