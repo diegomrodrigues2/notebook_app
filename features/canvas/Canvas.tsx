@@ -22,6 +22,7 @@ interface CanvasProps {
   dispatch: React.Dispatch<EditorAction>;
   camera: { x: number; y: number; zoom: number };
   isSpacePressed: boolean;
+  marqueeRect: EditorState['marqueeRect'];
 }
 
 export function Canvas({
@@ -35,6 +36,7 @@ export function Canvas({
   dispatch,
   camera,
   isSpacePressed,
+  marqueeRect,
 }: CanvasProps): React.ReactNode {
   const svgRef = useRef<SVGSVGElement>(null);
   const [roughSvg, setRoughSvg] = useState<RoughSVG | null>(null);
@@ -139,6 +141,20 @@ export function Canvas({
               {rightPage.elements.slice().sort((a, b) => a.zIndex - b.zIndex).map(element => (
                 <Shape key={element.id} element={element} roughSvg={roughSvg} selectedTool={selectedTool} isSelected={isSelected(element.id)} pageId={rightPage.id} onPointerDown={handleShapePointerDown} editingElementId={interactionState === 'EDITING_TEXT' ? currentElementId : null}/>
               ))}
+            </g>
+          )}
+
+          {interactionState === 'MARQUEE_SELECTING' && marqueeRect && (
+            <g transform={`translate(${marqueeRect.pageId === rightPage?.id ? (A4_WIDTH + PAGE_GAP) : 0}, 0)`}>
+              <rect
+                x={marqueeRect.x}
+                y={marqueeRect.y}
+                width={marqueeRect.width}
+                height={marqueeRect.height}
+                fill="rgba(0, 102, 255, 0.1)"
+                stroke="rgba(0, 102, 255, 0.7)"
+                strokeWidth={1 / camera.zoom}
+              />
             </g>
           )}
 

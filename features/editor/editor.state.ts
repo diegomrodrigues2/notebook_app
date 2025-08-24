@@ -38,6 +38,7 @@ export const initialState: EditorState = {
   groupSnapshot: null,
   historySnapshot: null,
   resizeHandle: null,
+  marqueeRect: null,
   camera: { x: 50, y: 50, zoom: 0.8 },
   cameraSnapshot: null,
   currentStyle: {

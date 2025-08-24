@@ -79,6 +79,40 @@ export function selectionReducer(state: EditorState, action: EditorAction): Edit
       const newPresent = updatePageInNotebooks(present, pageId, updatedPage);
       return { ...commitHistory(state, newPresent), selectedElement: null, selectedIds: null };
     }
+    
+    case 'START_MARQUEE_SELECTION': {
+        const { x, y, pageId } = action.payload;
+        return {
+            ...state,
+            interactionState: 'MARQUEE_SELECTING',
+            startPoint: { x, y },
+            marqueeRect: { x, y, width: 0, height: 0, pageId },
+            selectedElement: null,
+            selectedIds: null,
+        };
+    }
+
+    case 'UPDATE_MARQUEE_SELECTION': {
+        if (state.interactionState !== 'MARQUEE_SELECTING' || !state.startPoint || !state.marqueeRect) {
+            return state;
+        }
+        const { x: currentX, y: currentY } = action.payload;
+        const { x: startX, y: startY } = state.startPoint;
+
+        const newWidth = currentX - startX;
+        const newHeight = currentY - startY;
+
+        return {
+            ...state,
+            marqueeRect: {
+                ...state.marqueeRect,
+                x: newWidth > 0 ? startX : currentX,
+                y: newHeight > 0 ? startY : currentY,
+                width: Math.abs(newWidth),
+                height: Math.abs(newHeight),
+            }
+        };
+    }
 
     default:
         return state;

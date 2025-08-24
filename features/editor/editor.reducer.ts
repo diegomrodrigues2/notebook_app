@@ -27,6 +27,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'SELECT_ELEMENT':
     case 'CLEAR_SELECTION':
     case 'DELETE_SELECTED_ELEMENT':
+    case 'START_MARQUEE_SELECTION':
+    case 'UPDATE_MARQUEE_SELECTION':
       return selectionReducer(state, action);
 
     case 'UPDATE_ELEMENT_PROPERTIES':
@@ -54,6 +56,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'ZOOM_IN':
     case 'ZOOM_OUT':
     case 'RESET_ZOOM':
+    case 'WHEEL_PAN':
       return cameraReducer(state, action);
       
     case 'START_MOVING':

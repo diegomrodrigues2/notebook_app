@@ -21,6 +21,18 @@ export function cameraReducer(state: EditorState, action: EditorAction): EditorS
         case 'ZOOM_IN': return { ...state, camera: { ...state.camera, zoom: Math.min(5.0, state.camera.zoom * 1.1) } };
         case 'ZOOM_OUT': return { ...state, camera: { ...state.camera, zoom: Math.max(0.1, state.camera.zoom / 1.1) } };
         case 'RESET_ZOOM': return { ...state, camera: { x: 50, y: 50, zoom: 0.8 } };
+        case 'WHEEL_PAN': {
+            const { deltaX, deltaY } = action.payload;
+            const k = 1;
+            return {
+                ...state,
+                camera: {
+                    ...state.camera,
+                    x: state.camera.x - deltaX * k,
+                    y: state.camera.y - deltaY * k,
+                },
+            };
+        }
         default:
             return state;
     }

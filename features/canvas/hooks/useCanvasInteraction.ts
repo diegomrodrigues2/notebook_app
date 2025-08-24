@@ -56,6 +56,14 @@ export const useCanvasInteraction = ({
   const handlePointerDown = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
     if (event.target !== svgRef.current) return;
     
+    // If user is holding shift, we assume they are trying to add to a selection.
+    // Clicks on shapes are handled by `handleShapePointerDown`.
+    // We don't want a shift-click on the background to do anything,
+    // especially not clear the selection by starting a marquee.
+    if (event.shiftKey) {
+        return;
+    }
+
     if (isSpacePressed || event.button === 1 || selectedTool === 'HAND') {
         dispatch({ type: 'START_PANNING', payload: getCoords(event) });
         return;
@@ -70,7 +78,7 @@ export const useCanvasInteraction = ({
     if (selectedTool !== 'SELECT') {
       dispatch({ type: 'START_DRAWING', payload: { ...context.coords, pageId: context.pageId } });
     } else {
-      dispatch({ type: 'CLEAR_SELECTION' });
+      dispatch({ type: 'START_MARQUEE_SELECTION', payload: { ...context.coords, pageId: context.pageId } });
     }
   }, [dispatch, selectedTool, getCoords, getInteractionContext, isSpacePressed, svgRef]);
   
@@ -138,6 +146,7 @@ export const useCanvasInteraction = ({
         case 'DRAWING': dispatch({ type: 'DRAWING', payload: context.coords }); break;
         case 'MOVING': dispatch({ type: 'MOVING', payload: context.coords }); break;
         case 'RESIZING': dispatch({ type: 'RESIZING', payload: context.coords }); break;
+        case 'MARQUEE_SELECTING': dispatch({ type: 'UPDATE_MARQUEE_SELECTION', payload: context.coords }); break;
     }
   }, [interactionState, dispatch, getCoords, getInteractionContext]);
 
@@ -149,8 +158,14 @@ export const useCanvasInteraction = ({
 
   const handleWheel = useCallback((event: React.WheelEvent<SVGSVGElement>) => {
     event.preventDefault();
-    const { x, y } = getCoords(event);
-    dispatch({ type: 'ZOOM', payload: { deltaY: event.deltaY, x, y } });
+
+    if (event.ctrlKey) {
+      const { x, y } = getCoords(event);
+      dispatch({ type: 'ZOOM', payload: { deltaY: event.deltaY, x, y } });
+      return;
+    }
+
+    dispatch({ type: 'WHEEL_PAN', payload: { deltaX: event.deltaX, deltaY: event.deltaY } });
   }, [dispatch, getCoords]);
   
   const getCursor = () => {

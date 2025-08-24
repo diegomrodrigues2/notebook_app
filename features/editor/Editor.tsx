@@ -147,6 +147,7 @@ function Editor(): React.ReactNode {
           dispatch={dispatch as React.Dispatch<EditorAction>}
           camera={state.camera}
           isSpacePressed={isSpacePressed}
+          marqueeRect={state.marqueeRect}
         />
         <ZoomControls
           zoom={state.camera.zoom}

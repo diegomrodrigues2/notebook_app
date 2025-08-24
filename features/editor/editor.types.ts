@@ -23,7 +23,7 @@ export interface EditorState {
   activeNotebookId: string | null;
   activePageId: string | null;
   selectedTool: Tool;
-  interactionState: 'IDLE' | 'DRAWING' | 'MOVING' | 'RESIZING' | 'PANNING' | 'EDITING_TEXT';
+  interactionState: 'IDLE' | 'DRAWING' | 'MOVING' | 'RESIZING' | 'PANNING' | 'EDITING_TEXT' | 'MARQUEE_SELECTING';
   currentElementId: string | null;
   startPoint: { x: number; y: number } | null;
   selectedElement: { pageId: string, elementId: string } | null;
@@ -36,6 +36,7 @@ export interface EditorState {
   } | null;
   historySnapshot: Notebook[] | null;
   resizeHandle: ResizeHandle | null;
+  marqueeRect: { x: number; y: number; width: number; height: number; pageId: string } | null;
   camera: { x: number; y: number; zoom: number };
   cameraSnapshot: { x: number; y: number; } | null;
   currentStyle: {
@@ -58,6 +59,8 @@ export type EditorAction =
   | { type: 'RENAME_NOTEBOOK'; payload: { notebookId: string, newName: string } }
   | { type: 'RENAME_PAGE'; payload: { pageId: string, newName: string } }
   | { type: 'SELECT_TOOL'; payload: Tool }
+  | { type: 'START_MARQUEE_SELECTION'; payload: { x: number; y: number; pageId: string } }
+  | { type: 'UPDATE_MARQUEE_SELECTION'; payload: { x: number; y: number } }
   | { type: 'START_DRAWING'; payload: { x: number; y: number; pageId: string } }
   | { type: 'DRAWING'; payload: { x: number; y: number } }
   | { type: 'START_MOVING'; payload: { x: number; y: number } }
@@ -70,6 +73,7 @@ export type EditorAction =
   | { type: 'ZOOM_IN' }
   | { type: 'ZOOM_OUT' }
   | { type: 'RESET_ZOOM' }
+  | { type: 'WHEEL_PAN'; payload: { deltaX: number; deltaY: number } }
   | { type: 'FINISH_INTERACTION' }
   | { type: 'SELECT_ELEMENT'; payload: { pageId: string, elementId: string } }
   | { type: 'TOGGLE_ELEMENT_IN_SELECTION'; payload: { pageId: string; elementId: string } }
