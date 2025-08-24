@@ -167,11 +167,6 @@ export function Sidebar({ notebooks, activeNotebookId, activePageId, dispatch, i
                                         <div className="absolute top-full mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 z-30">
                                             <button onClick={() => handleAddPage(notebook.id, 'BLANK')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Página em Branco</button>
                                             <button onClick={() => handleAddPage(notebook.id, 'CORNELL')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Notas Cornell</button>
-                                            <button onClick={() => handleAddPage(notebook.id, 'OUTLINING')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Método de Tópicos</button>
-                                            <button onClick={() => handleAddPage(notebook.id, 'SENTENCE_METHOD')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Método de Sentenças</button>
-                                            <button onClick={() => handleAddPage(notebook.id, 'MIND_MAP')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Mapa Mental</button>
-                                            <button onClick={() => handleAddPage(notebook.id, 'CHARTING')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Método de Gráficos</button>
-                                            <button onClick={() => handleAddPage(notebook.id, 'TEXTBOOK')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Estilo Livro Didático</button>
                                         </div>
                                     )}
                                 </div>

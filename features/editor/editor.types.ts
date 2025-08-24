@@ -12,7 +12,7 @@ export interface Notebook {
   pages: Page[];
 }
 
-export type Template = 'BLANK' | 'CORNELL' | 'TEXTBOOK' | 'OUTLINING' | 'SENTENCE_METHOD' | 'MIND_MAP' | 'CHARTING';
+export type Template = 'BLANK' | 'CORNELL';
 
 export interface EditorState {
   history: {
