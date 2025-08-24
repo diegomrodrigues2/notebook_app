@@ -18,7 +18,10 @@ export function selectionReducer(state: EditorState, action: EditorAction): Edit
       
       const newCurrentStyle = { ...state.currentStyle };
       if('stroke' in selectedElement) newCurrentStyle.stroke = selectedElement.stroke;
-      if('strokeWidth' in selectedElement) newCurrentStyle.strokeWidth = selectedElement.strokeWidth;
+      // Do not adopt strokeWidth from text elements for the global style
+      if (selectedElement.type !== 'TEXT' && 'strokeWidth' in selectedElement) {
+        newCurrentStyle.strokeWidth = selectedElement.strokeWidth;
+      }
       if('strokeStyle' in selectedElement) newCurrentStyle.strokeStyle = selectedElement.strokeStyle;
       if('fill' in selectedElement) newCurrentStyle.fill = selectedElement.fill;
       if('fillStyle' in selectedElement) newCurrentStyle.fillStyle = selectedElement.fillStyle;

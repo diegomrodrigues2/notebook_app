@@ -137,3 +137,28 @@ export const SendBackwardIcon = (): React.ReactNode => (
         <rect x="3" y="3" width="12" height="12" rx="1"></rect>
     </svg>
 );
+
+export const VerticalAlignTopIcon = (): React.ReactNode => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="3" y1="3" x2="21" y2="3"></line>
+        <polyline points="8 12 12 8 16 12"></polyline>
+        <line x1="12" y1="8" x2="12" y2="16"></line>
+    </svg>
+);
+
+export const VerticalAlignMiddleIcon = (): React.ReactNode => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <polyline points="8 16 12 20 16 16"></polyline>
+        <line x1="12" y1="4" x2="12" y2="20"></line>
+        <polyline points="8 8 12 4 16 8"></polyline>
+    </svg>
+);
+
+export const VerticalAlignBottomIcon = (): React.ReactNode => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="3" y1="21" x2="21" y2="21"></line>
+        <polyline points="8 12 12 16 16 12"></polyline>
+        <line x1="12" y1="8" x2="12" y2="16"></line>
+    </svg>
+);

@@ -1,7 +1,8 @@
 import { EditorState, EditorAction } from '../editor.types';
-import { CanvasElement, FreeDrawElement, CurveElement, LineElement, ArrowElement } from '../../../types/elements';
+import { CanvasElement, FreeDrawElement, CurveElement, LineElement, ArrowElement, TextElement } from '../../../types/elements';
 import { findPage, updatePageInNotebooks } from '../editor.helpers';
 import { resizeElement } from '../../../utils/geometry';
+import { measureText } from '../../../utils/text';
 
 export function transformReducer(state: EditorState, action: EditorAction): EditorState {
     const { present } = state.history;
@@ -27,7 +28,7 @@ export function transformReducer(state: EditorState, action: EditorAction): Edit
             const deltaX = currentX - startX;
             const deltaY = currentY - startY;
 
-            const updatedElements = pageResult.page.elements.map(el => {
+            let updatedElements = pageResult.page.elements.map(el => {
                 if (el.id !== state.selectedElement?.elementId) return el;
 
                 const originalElement = state.elementSnapshot!;
@@ -65,7 +66,20 @@ export function transformReducer(state: EditorState, action: EditorAction): Edit
                         };
                 }
             });
-            const newPresent = updatePageInNotebooks(present, pageId, { ...pageResult.page, elements: updatedElements as CanvasElement[] });
+
+            // Move bound/attached texts by delta as well
+            const moved = updatedElements.find(el => el.id === state.selectedElement?.elementId)!;
+            const withTexts = updatedElements.map(el => {
+              if (el.type === 'TEXT' && (el as TextElement).containerId === moved.id) {
+                return { ...el, x: el.x + deltaX, y: el.y + deltaY };
+              }
+              if (el.type === 'TEXT' && (el as TextElement).attachedToId === moved.id) {
+                return { ...el, x: el.x + deltaX, y: el.y + deltaY };
+              }
+              return el;
+            });
+            
+            const newPresent = updatePageInNotebooks(present, pageId, { ...pageResult.page, elements: withTexts as CanvasElement[] });
             return { ...state, history: { ...state.history, present: newPresent } };
         }
 
@@ -88,8 +102,77 @@ export function transformReducer(state: EditorState, action: EditorAction): Edit
             const { x: startX, y: startY } = state.startPoint;
             const deltaX = currentX - startX;
             const deltaY = currentY - startY;
-            const resized = resizeElement(state.elementSnapshot, state.resizeHandle, deltaX, deltaY);
-            const updatedElements = pageResult.page.elements.map(el => el.id === state.selectedElement?.elementId ? resized : el);
+
+            const snap = state.elementSnapshot;
+            const resized = resizeElement(snap, state.resizeHandle, deltaX, deltaY);
+
+            // Special case for resizing a TEXT element: always scale the font.
+            if (resized.type === 'TEXT') {
+                const originalTe = snap as TextElement;
+                const resizedTe = resized as TextElement;
+                
+                const w0 = Math.max(1, originalTe.width);
+                const h0 = Math.max(1, originalTe.height);
+                const w1 = Math.max(1, resizedTe.width);
+                const h1 = Math.max(1, resizedTe.height);
+
+                const scaleX = w0 > 0 ? w1 / w0 : 1;
+                const scaleY = h0 > 0 ? h1 / h0 : 1;
+                
+                const sf = Math.max(0.1, Math.sqrt(scaleX * scaleY));
+
+                if (isFinite(sf) && sf > 0) {
+                    const newFontSize = Math.max(4, originalTe.fontSize * sf);
+                    const newWidth = Math.max(10, resizedTe.width);
+                    const m = measureText(originalTe.text, newFontSize, originalTe.fontFamily, newWidth);
+                    
+                    const finalTe: TextElement = {
+                        ...resizedTe,
+                        fontSize: newFontSize,
+                        width: newWidth,
+                        height: m.height,
+                        wrap: true, // Force wrap on resize for predictable behavior
+                    };
+                    
+                    const updatedElements = pageResult.page.elements.map(el => el.id === state.selectedElement?.elementId ? finalTe : el);
+                    const newPresent = updatePageInNotebooks(present, pageId, { ...pageResult.page, elements: updatedElements });
+                    return { ...state, history: { ...state.history, present: newPresent } };
+                }
+                return state; // Avoid update if scale factor is invalid
+            }
+
+            let updatedElements = pageResult.page.elements.map(el => {
+                if (el.id === state.selectedElement?.elementId) return resized;
+                return el;
+            });
+
+            // If container resized → recenter bound text
+            if (resized.type === 'RECTANGLE' || resized.type === 'ELLIPSE') {
+                updatedElements = updatedElements.map(el => {
+                    if (el.type === 'TEXT' && (el as TextElement).containerId === resized.id) {
+                        return {
+                            ...el,
+                            x: resized.x + (resized.width - el.width) / 2,
+                            y: resized.y + (resized.height - el.height) / 2,
+                        };
+                    }
+                    return el;
+                });
+            }
+
+            // If edge resized → snap label to new midpoint
+            if (resized.type === 'LINE' || resized.type === 'ARROW') {
+                const [a, b] = (resized as LineElement | ArrowElement).points;
+                const mx = (a[0] + b[0]) / 2;
+                const my = (a[1] + b[1]) / 2;
+                updatedElements = updatedElements.map(el => {
+                    if (el.type === 'TEXT' && (el as TextElement).attachedToId === resized.id) {
+                        return { ...el, x: mx - el.width / 2, y: my - el.height / 2 };
+                    }
+                    return el;
+                });
+            }
+
             const newPresent = updatePageInNotebooks(present, pageId, { ...pageResult.page, elements: updatedElements });
             return { ...state, history: { ...state.history, present: newPresent } };
         }

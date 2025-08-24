@@ -5,7 +5,7 @@ import { Canvas } from '../canvas/Canvas';
 import { editorReducer } from './editor.reducer';
 import { initialState } from './editor.state';
 import { EditorAction } from './editor.types';
-import { Tool } from '../../types/elements';
+import { Tool, TextElement } from '../../types/elements';
 import { PropertiesPanel } from '../properties/PropertiesPanel';
 import { ZoomControls } from '../zoom/ZoomControls';
 import { Sidebar } from '../sidebar/Sidebar';
@@ -27,10 +27,14 @@ function Editor(): React.ReactNode {
     : null;
 
   let selectedElement = null;
+  let hasBoundText = false;
   if (state.selectedElement && activeNotebook) {
     const page = activeNotebook.pages.find(p => p.id === state.selectedElement.pageId);
     if (page) {
       selectedElement = page.elements.find(el => el.id === state.selectedElement.elementId) || null;
+      if (selectedElement && (selectedElement.type === 'RECTANGLE' || selectedElement.type === 'ELLIPSE')) {
+        hasBoundText = page.elements.some(el => el.type === 'TEXT' && (el as TextElement).containerId === selectedElement.id);
+      }
     }
   }
 
@@ -40,12 +44,24 @@ function Editor(): React.ReactNode {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === 'Space') {
+      if (event.code === 'Space' && state.interactionState !== 'EDITING_TEXT') {
           event.preventDefault();
           setIsSpacePressed(true);
       }
       if ((event.key === 'Delete' || event.key === 'Backspace') && state.selectedElement) {
         dispatch({ type: 'DELETE_SELECTED_ELEMENT' });
+      }
+
+      // F2: edit selected text (Excalidraw-like)
+      if (event.key === 'F2' && state.selectedElement) {
+        const nb = state.history.present.find(n => n.id === state.activeNotebookId);
+        const page = nb?.pages.find(p => p.id === state.selectedElement!.pageId);
+        const el = page?.elements.find(e => e.id === state.selectedElement!.elementId);
+        if (el?.type === 'TEXT') {
+          event.preventDefault();
+          dispatch({ type: 'START_EDITING_TEXT', payload: { pageId: state.selectedElement!.pageId, elementId: el.id } });
+          return;
+        }
       }
 
       if (event.metaKey || event.ctrlKey) {
@@ -59,6 +75,12 @@ function Editor(): React.ReactNode {
         } else if (event.key === 'y') {
           event.preventDefault();
           dispatch({ type: 'REDO' });
+        } else if (event.shiftKey && (event.key === 'B' || event.key === 'b')) {
+          event.preventDefault();
+          dispatch({ type: 'WRAP_TEXT_IN_CONTAINER' });
+        } else if (event.shiftKey && (event.key === 'J' || event.key === 'j')) {
+          event.preventDefault();
+          dispatch({ type: 'FIT_CONTAINER_TO_TEXT' });
         }
       }
     };
@@ -74,7 +96,7 @@ function Editor(): React.ReactNode {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [state.selectedElement]);
+  }, [state.selectedElement, state.activeNotebookId, state.history.present, state.interactionState]);
   
   return (
     <div className="flex w-full h-full">
@@ -95,6 +117,7 @@ function Editor(): React.ReactNode {
         {selectedElement && (
           <PropertiesPanel
             element={selectedElement}
+            hasBoundText={hasBoundText}
             onUpdate={(properties) =>
               dispatch({
                 type: 'UPDATE_ELEMENT_PROPERTIES',
@@ -105,6 +128,8 @@ function Editor(): React.ReactNode {
             onSendToBack={() => dispatch({ type: 'SEND_TO_BACK' })}
             onBringForward={() => dispatch({ type: 'BRING_FORWARD' })}
             onSendBackward={() => dispatch({ type: 'SEND_BACKWARD' })}
+            onFitContainerToText={() => dispatch({ type: 'FIT_CONTAINER_TO_TEXT' })}
+            onWrapInContainer={() => dispatch({ type: 'WRAP_TEXT_IN_CONTAINER' })}
           />
         )}
         <Toolbar

@@ -1,18 +1,21 @@
 
 import React, { useState } from 'react';
-import { CanvasElement, RectangleElement, StrokeStyle, Roundness, EllipseElement, FillStyle, TextElement } from '../../types/elements';
+import { CanvasElement, RectangleElement, StrokeStyle, Roundness, EllipseElement, FillStyle, TextElement, VerticalAlign } from '../../types/elements';
 import { STROKE_WIDTHS, FONT_SIZES } from '../../constants';
 import { ColorPicker } from './components/ColorPicker';
 import { fillStyleIcons } from './components/FillStyleIcons';
-import { BringForwardIcon, BringToFrontIcon, SendBackwardIcon, SendToBackIcon } from '../../components/icons';
+import { BringForwardIcon, BringToFrontIcon, SendBackwardIcon, SendToBackIcon, VerticalAlignBottomIcon, VerticalAlignMiddleIcon, VerticalAlignTopIcon } from '../../components/icons';
 
 interface PropertiesPanelProps {
   element: CanvasElement;
+  hasBoundText: boolean;
   onUpdate: (properties: Partial<CanvasElement>) => void;
   onBringToFront: () => void;
   onSendToBack: () => void;
   onBringForward: () => void;
   onSendBackward: () => void;
+  onFitContainerToText: () => void;
+  onWrapInContainer: () => void;
 }
 
 const isFillable = (element: CanvasElement): element is RectangleElement | EllipseElement => 
@@ -24,7 +27,11 @@ const isRectangle = (element: CanvasElement): element is RectangleElement =>
 const isText = (element: CanvasElement): element is TextElement => 
   element.type === 'TEXT';
 
-export function PropertiesPanel({ element, onUpdate, onBringToFront, onSendToBack, onBringForward, onSendBackward }: PropertiesPanelProps): React.ReactNode {
+const isBoundText = (element: CanvasElement): element is TextElement =>
+  isText(element) && !!element.containerId;
+
+
+export function PropertiesPanel({ element, hasBoundText, onUpdate, onBringToFront, onSendToBack, onBringForward, onSendBackward, onFitContainerToText, onWrapInContainer }: PropertiesPanelProps): React.ReactNode {
   const [isStrokeColorExpanded, setIsStrokeColorExpanded] = useState(false);
   const [isFillColorExpanded, setIsFillColorExpanded] = useState(false);
 
@@ -46,6 +53,50 @@ export function PropertiesPanel({ element, onUpdate, onBringToFront, onSendToBac
           isExpanded={isFillColorExpanded}
           setIsExpanded={setIsFillColorExpanded}
         />
+      )}
+
+      {isText(element) && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-gray-600">Alignment</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {(['left','center','right'] as const).map(al => (
+              <button
+                key={al}
+                onClick={() => onUpdate({ textAlign: al })}
+                className={`px-2 py-1 text-sm rounded-md flex items-center justify-center capitalize ${ (element as TextElement).textAlign === al ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+              >
+                {al}
+              </button>
+            ))}
+          </div>
+          {isBoundText(element) && (
+            <>
+              <h3 className="text-sm font-medium text-gray-600 pt-1" id="v-align-label">Vertical Align</h3>
+              <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby="v-align-label">
+                {(['top','middle','bottom'] as const).map(al => (
+                  <button
+                    key={al}
+                    onClick={() => onUpdate({ verticalAlign: al as VerticalAlign })}
+                    title={`Vertical Align ${al}`}
+                    className={`p-1.5 rounded-md flex items-center justify-center ${ (element as TextElement).verticalAlign === al ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                  >
+                    {al === 'top' ? <VerticalAlignTopIcon /> : al === 'middle' ? <VerticalAlignMiddleIcon /> : <VerticalAlignBottomIcon />}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-sm text-gray-600">Wrap text</span>
+            <button
+              onClick={() => onUpdate({ wrap: !(element as TextElement).wrap })}
+              className={`px-2 py-1 text-sm rounded-md ${ (element as TextElement).wrap ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+              aria-pressed={(element as TextElement).wrap}
+            >
+              {(element as TextElement).wrap ? 'On' : 'Off'}
+            </button>
+          </div>
+        </div>
       )}
 
       {isFillable(element) && (
@@ -121,6 +172,20 @@ export function PropertiesPanel({ element, onUpdate, onBringToFront, onSendToBac
               <BringToFrontIcon />
           </button>
         </div>
+      </div>
+      
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-gray-600" id="actions-label">Actions</h3>
+        {isText(element) && !isBoundText(element) && (
+            <button onClick={onWrapInContainer} className="w-full px-3 py-2 text-sm rounded-md transition-colors bg-gray-100 hover:bg-gray-200 text-gray-700">
+                Wrap in container (Ctrl+Shift+B)
+            </button>
+        )}
+        {isFillable(element) && hasBoundText && (
+            <button onClick={onFitContainerToText} className="w-full px-3 py-2 text-sm rounded-md transition-colors bg-gray-100 hover:bg-gray-200 text-gray-700">
+                Fit container to text (Ctrl+Shift+J)
+            </button>
+        )}
       </div>
 
       {isRectangle(element) && (

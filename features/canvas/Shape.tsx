@@ -1,10 +1,10 @@
 
-
 import React, { useRef, useLayoutEffect } from 'react';
 import { line as d3Line } from 'd3-shape';
 import { CanvasElement, TextElement, Tool } from '../../types/elements';
 import { RoughSVG } from 'roughjs/bin/svg';
 import { Options } from 'roughjs/bin/core';
+import { measureText } from '../../utils/text';
 
 interface ShapeProps {
   element: CanvasElement;
@@ -127,24 +127,72 @@ export function Shape({ element, roughSvg, selectedTool, isSelected, pageId, onP
 
   if (element.type === 'TEXT') {
     const textElement = element as TextElement;
-    const lines = textElement.text.split('\n');
+    const isBound = Boolean(textElement.containerId);
+    const lineMetrics = measureText(
+      textElement.text,
+      textElement.fontSize,
+      textElement.fontFamily,
+      textElement.wrap ? Math.max(1, textElement.width) : undefined
+    );
+    const lines = lineMetrics.lines;
+    const lineHeight = textElement.fontSize * 1.2;
+    const textBlockH = lines.length * lineHeight;
+    const bgPad = textElement.padding ?? 0;
+
+    // Horizontal anchor inside own box/inner box
+    let anchorX = textElement.x;
+    let textAnchor: 'start' | 'middle' | 'end' = 'start';
+    if (textElement.textAlign === 'center') {
+      anchorX = textElement.x + (textElement.width || 0) / 2;
+      textAnchor = 'middle';
+    } else if (textElement.textAlign === 'right') {
+      anchorX = textElement.x + (textElement.width || 0);
+      textAnchor = 'end';
+    }
+
+    // Vertical start (only for bound text)
+    let yStart = textElement.y;
+    if (isBound) {
+      const innerH = Math.max(1, textElement.height || 0);
+      yStart =
+        textElement.verticalAlign === 'top'
+          ? textElement.y
+          : textElement.verticalAlign === 'bottom'
+          ? textElement.y + (innerH - textBlockH)
+          : textElement.y + (innerH - textBlockH) / 2; // middle default
+    }
+
     return (
-        <text
-            x={textElement.x}
-            y={textElement.y}
-            fontFamily={textElement.fontFamily}
-            fontSize={textElement.fontSize}
-            fill={textElement.stroke}
-            dominantBaseline="hanging"
-            pointerEvents="all"
-            {...gProps}
-        >
-            {lines.map((line, index) => (
-                <tspan key={index} x={textElement.x} dy={index === 0 ? 0 : `${textElement.fontSize * 1.2}px`}>
-                    {line}
-                </tspan>
-            ))}
-        </text>
+        <>
+            {textElement.backgroundColor && textElement.backgroundColor !== 'transparent' && (
+                <rect
+                    x={textElement.x - bgPad}
+                    y={textElement.y - bgPad}
+                    width={textElement.width + bgPad * 2}
+                    height={textElement.height + bgPad * 2}
+                    fill={textElement.backgroundColor}
+                    stroke="none"
+                    pointerEvents="none"
+                />
+            )}
+            <text
+                x={anchorX}
+                y={yStart}
+                fontFamily={textElement.fontFamily}
+                fontSize={textElement.fontSize}
+                fill={textElement.stroke}
+                dominantBaseline="hanging"
+                textAnchor={textAnchor}
+                pointerEvents="all"
+                {...gProps}
+            >
+                {lines.map((line, index) => (
+                    <tspan key={index} x={anchorX} dy={index === 0 ? 0 : `${lineHeight}px`}>
+                        {line}
+                    </tspan>
+                ))}
+            </text>
+        </>
     );
   }
 

@@ -1,4 +1,3 @@
-
 import { CanvasElement, FillStyle, ResizeHandle, Roundness, StrokeStyle, Tool } from '../../types/elements';
 
 export interface Page {
@@ -8,7 +7,7 @@ export interface Page {
 }
 
 export interface Notebook {
-  id: string;
+  id:string;
   name: string;
   pages: Page[];
 }
@@ -71,7 +70,11 @@ export type EditorAction =
   | { type: 'DELETE_SELECTED_ELEMENT' }
   | { type: 'START_EDITING_TEXT'; payload: { pageId: string, elementId: string } }
   | { type: 'EDIT_ELEMENT_TEXT'; payload: { text: string; width: number; height: number } }
+  | { type: 'CREATE_BOUND_TEXT'; payload: { pageId: string; containerId: string } }
+  | { type: 'CREATE_EDGE_LABEL'; payload: { pageId: string; edgeId: string } }
   | { type: 'UPDATE_ELEMENT_PROPERTIES'; payload: { properties: Partial<CanvasElement> } }
+  | { type: 'FIT_CONTAINER_TO_TEXT' }
+  | { type: 'WRAP_TEXT_IN_CONTAINER' }
   | { type: 'BRING_TO_FRONT' }
   | { type: 'SEND_TO_BACK' }
   | { type: 'BRING_FORWARD' }

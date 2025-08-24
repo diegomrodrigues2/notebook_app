@@ -4,6 +4,8 @@ export type ResizeHandle = 'n' | 's' | 'e' | 'w' | 'nw' | 'ne' | 'sw' | 'se';
 export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
 export type Roundness = 'sharp' | 'round';
 export type FillStyle = 'solid' | 'hachure' | 'cross-hatch';
+export type TextAlign = 'left' | 'center' | 'right';
+export type VerticalAlign = 'top' | 'middle' | 'bottom';
 
 // Base properties common to all drawable elements
 export interface BaseElement {
@@ -59,6 +61,20 @@ export interface TextElement extends BaseElement {
   text: string;
   fontSize: number;
   fontFamily: string;
+  /** Horizontal align inside own box or container inner box */
+  textAlign: TextAlign;
+  /** Only used when bound to a container (containerId present) */
+  verticalAlign?: VerticalAlign;
+  /** Wrap long lines to fit width */
+  wrap?: boolean;
+  /** If present, this text is bound to a container element */
+  containerId?: string;       // if text is bound inside a shape
+  /** If present, this text is attached to a line/arrow element */
+  attachedToId?: string;      // if text is attached to a line/arrow
+  /** Padding between text and container inner edge (when bound) or for label background */
+  padding?: number;           // inner padding when bound to container, or bg padding on labels
+  /** Background color for the text element (e.g., for labels) */
+  backgroundColor?: string;   // e.g. 'white' for line/arrow labels
 }
 
 

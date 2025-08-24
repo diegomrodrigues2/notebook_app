@@ -1,4 +1,3 @@
-
 import React, { useCallback } from 'react';
 import { ResizeHandle, Tool } from '../../../types/elements';
 import { getSVGCoordinates } from '../../../utils/geometry';
@@ -86,6 +85,19 @@ export const useCanvasInteraction = ({
          return;
       }
     }
+
+    // NEW: double-click on shape/edge to create text/label
+    if (event.detail === 2 && element) {
+      if (element.type === 'RECTANGLE' || element.type === 'ELLIPSE') {
+        dispatch({ type: 'CREATE_BOUND_TEXT', payload: { pageId, containerId: elementId } });
+        return;
+      }
+      if (element.type === 'LINE' || element.type === 'ARROW') {
+        dispatch({ type: 'CREATE_EDGE_LABEL', payload: { pageId, edgeId: elementId } });
+        return;
+      }
+    }
+
 
     // Normal selection/move logic for the 'SELECT' tool.
     if (selectedTool === 'SELECT') {

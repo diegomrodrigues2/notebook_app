@@ -18,7 +18,13 @@ export const createElement = (tool: Tool, id: string, x: number, y: number, styl
         case 'ARROW': return { id, x, y, width: 0, height: 0, type: 'ARROW', ...baseProperties, fill: 'transparent', fillStyle: 'solid', points: [[x, y], [x, y]] };
         case 'FREEDRAW': return { id, x, y, width: 0, height: 0, type: 'FREEDRAW', ...baseProperties, fill: 'transparent', fillStyle: 'solid', points: [[x, y]] };
         case 'CURVE': return { id, x, y, width: 0, height: 0, type: 'CURVE', ...baseProperties, fill: 'transparent', fillStyle: 'solid', points: [[x, y], [x, y], [x, y]] };
-        case 'TEXT': return { id, x, y, width: 0, height: 0, type: 'TEXT', text: '', ...baseProperties, stroke: style.stroke, fill: 'transparent', fillStyle: 'solid', strokeWidth: 0, strokeStyle: 'solid', fontSize: style.fontSize, fontFamily: style.fontFamily };
+        case 'TEXT': return {
+            id, x, y, width: 0, height: 0, type: 'TEXT', text: '',
+            ...baseProperties,
+            stroke: style.stroke, fill: 'transparent', fillStyle: 'solid', strokeWidth: 0, strokeStyle: 'solid',
+            fontSize: style.fontSize, fontFamily: style.fontFamily,
+            textAlign: 'left', wrap: false, containerId: null, padding: 12, verticalAlign: 'middle',
+        };
         default: return null;
     }
 };

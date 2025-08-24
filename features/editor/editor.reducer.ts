@@ -34,6 +34,10 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'SEND_TO_BACK':
     case 'BRING_FORWARD':
     case 'SEND_BACKWARD':
+    case 'FIT_CONTAINER_TO_TEXT':
+    case 'WRAP_TEXT_IN_CONTAINER':
+    case 'CREATE_BOUND_TEXT':
+    case 'CREATE_EDGE_LABEL':
       return elementReducer(state, action);
 
     case 'START_DRAWING':
