@@ -1,0 +1,31 @@
+import { EditorState, EditorAction } from '../editor.types';
+import { TextElement } from '../../../types/elements';
+import { findPage, updatePageInNotebooks } from '../editor.helpers';
+
+export function textReducer(state: EditorState, action: EditorAction): EditorState {
+    const { present } = state.history;
+
+    switch (action.type) {
+        case 'START_EDITING_TEXT': {
+            const { pageId, elementId } = action.payload;
+            const pageResult = findPage(present, pageId);
+            if (!pageResult) return state;
+            const element = pageResult.page.elements.find(el => el.id === elementId);
+            if (!element || element.type !== 'TEXT') return state;
+            return { ...state, historySnapshot: present, interactionState: 'EDITING_TEXT', currentElementId: elementId, selectedElement: action.payload, selectedTool: 'SELECT' };
+        }
+        case 'EDIT_ELEMENT_TEXT': {
+            if (state.interactionState !== 'EDITING_TEXT' || !state.currentElementId || !state.selectedElement) return state;
+            const { pageId } = state.selectedElement;
+            const pageResult = findPage(present, pageId);
+            if (!pageResult) return state;
+
+            const { text, width, height } = action.payload;
+            const updatedElements = pageResult.page.elements.map(el => el.id === state.currentElementId ? { ...el, text, width, height } as TextElement : el);
+            const newPresent = updatePageInNotebooks(present, pageId, { ...pageResult.page, elements: updatedElements });
+            return { ...state, history: { ...state.history, present: newPresent } };
+        }
+        default:
+            return state;
+    }
+}

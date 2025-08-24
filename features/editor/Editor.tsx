@@ -2,18 +2,22 @@
 import React, { useReducer, useEffect, useState } from 'react';
 import { Toolbar } from '../toolbar/Toolbar';
 import { Canvas } from '../canvas/Canvas';
-import { editorReducer, initialState, EditorAction } from './editorReducer';
+import { editorReducer } from './editor.reducer';
+import { initialState } from './editor.state';
+import { EditorAction } from './editor.types';
 import { Tool } from '../../types/elements';
 import { PropertiesPanel } from '../properties/PropertiesPanel';
 import { ZoomControls } from '../zoom/ZoomControls';
 import { Sidebar } from '../sidebar/Sidebar';
+import { HistoryControls } from './components/HistoryControls';
 
 function Editor(): React.ReactNode {
   const [state, dispatch] = useReducer(editorReducer, initialState);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const activeNotebook = state.notebooks.find(n => n.id === state.activeNotebookId);
+  const notebooks = state.history.present;
+  const activeNotebook = notebooks.find(n => n.id === state.activeNotebookId);
   const activePageIndex = activeNotebook?.pages.findIndex(p => p.id === state.activePageId) ?? -1;
 
   const leftPageIndex = activePageIndex !== -1 ? activePageIndex - (activePageIndex % 2) : -1;
@@ -43,6 +47,20 @@ function Editor(): React.ReactNode {
       if ((event.key === 'Delete' || event.key === 'Backspace') && state.selectedElement) {
         dispatch({ type: 'DELETE_SELECTED_ELEMENT' });
       }
+
+      if (event.metaKey || event.ctrlKey) {
+        if (event.key === 'z') {
+          event.preventDefault();
+          if (event.shiftKey) {
+            dispatch({ type: 'REDO' });
+          } else {
+            dispatch({ type: 'UNDO' });
+          }
+        } else if (event.key === 'y') {
+          event.preventDefault();
+          dispatch({ type: 'REDO' });
+        }
+      }
     };
     const handleKeyUp = (event: KeyboardEvent) => {
         if (event.code === 'Space') {
@@ -61,7 +79,7 @@ function Editor(): React.ReactNode {
   return (
     <div className="flex w-full h-full">
       <Sidebar
-        notebooks={state.notebooks}
+        notebooks={notebooks}
         activeNotebookId={state.activeNotebookId}
         activePageId={state.activePageId}
         dispatch={dispatch as React.Dispatch<EditorAction>}
@@ -69,6 +87,11 @@ function Editor(): React.ReactNode {
         setIsOpen={setIsSidebarOpen}
       />
       <div className="relative flex-1 h-full">
+        <HistoryControls 
+          canUndo={state.history.past.length > 0}
+          canRedo={state.history.future.length > 0}
+          dispatch={dispatch}
+        />
         {selectedElement && (
           <PropertiesPanel
             element={selectedElement}
@@ -78,6 +101,10 @@ function Editor(): React.ReactNode {
                 payload: { properties },
               })
             }
+            onBringToFront={() => dispatch({ type: 'BRING_TO_FRONT' })}
+            onSendToBack={() => dispatch({ type: 'SEND_TO_BACK' })}
+            onBringForward={() => dispatch({ type: 'BRING_FORWARD' })}
+            onSendBackward={() => dispatch({ type: 'SEND_BACKWARD' })}
           />
         )}
         <Toolbar

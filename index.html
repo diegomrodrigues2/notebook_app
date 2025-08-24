@@ -12,6 +12,18 @@
     <style>
       body {
         font-family: 'Kalam', cursive;
+        /* Disable native text selection/highlighting for a cleaner UI */
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+      /* Re-enable text selection for input fields so users can edit text */
+      textarea, input {
+        user-select: auto;
+        -webkit-user-select: auto;
+        -moz-user-select: auto;
+        -ms-user-select: auto;
       }
     </style>
   <script type="importmap">

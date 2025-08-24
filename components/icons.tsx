@@ -86,3 +86,54 @@ export const MenuIcon = (): React.ReactNode => (
         <line x1="3" y1="18" x2="21" y2="18"></line>
     </svg>
 );
+
+export const TrashIcon = (): React.ReactNode => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <line x1="10" y1="11" x2="10" y2="17"></line>
+        <line x1="14" y1="11" x2="14" y2="17"></line>
+    </svg>
+);
+
+export const UndoIcon = (): React.ReactNode => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 10v6a6 6 0 0 0 6 6h9"></path>
+    <polyline points="7 10 3 10 3 14"></polyline>
+  </svg>
+);
+
+export const RedoIcon = (): React.ReactNode => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10v6a6 6 0 0 1-6 6h-9"></path>
+    <polyline points="17 10 21 10 21 14"></polyline>
+  </svg>
+);
+
+export const BringToFrontIcon = (): React.ReactNode => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="12" height="12" rx="1"></rect>
+        <rect x="9" y="9" width="12" height="12" rx="1"></rect>
+    </svg>
+);
+
+export const SendToBackIcon = (): React.ReactNode => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="9" width="12" height="12" rx="1"></rect>
+        <rect x="3" y="3" width="12" height="12" rx="1"></rect>
+    </svg>
+);
+
+export const BringForwardIcon = (): React.ReactNode => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="12" height="12" rx="1" strokeDasharray="4 4"></rect>
+        <rect x="9" y="9" width="12" height="12" rx="1"></rect>
+    </svg>
+);
+
+export const SendBackwardIcon = (): React.ReactNode => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="9" width="12" height="12" rx="1" strokeDasharray="4 4"></rect>
+        <rect x="3" y="3" width="12" height="12" rx="1"></rect>
+    </svg>
+);

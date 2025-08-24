@@ -18,6 +18,7 @@ export interface BaseElement {
   fillStyle: FillStyle;
   strokeWidth: number;
   strokeStyle: StrokeStyle;
+  zIndex: number;
 }
 
 export interface RectangleElement extends BaseElement {

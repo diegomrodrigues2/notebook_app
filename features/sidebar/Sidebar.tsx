@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Notebook, EditorAction } from '../editor/editorReducer';
-import { PlusIcon, ChevronDownIcon, ChevronRightIcon, MenuIcon } from '../../components/icons';
+import { Notebook, EditorAction, Template } from '../editor/editor.types';
+import { PlusIcon, ChevronDownIcon, ChevronRightIcon, MenuIcon, TrashIcon } from '../../components/icons';
 
 interface SidebarProps {
   notebooks: Notebook[];
@@ -18,7 +19,9 @@ export function Sidebar({ notebooks, activeNotebookId, activePageId, dispatch, i
     const [expandedNotebooks, setExpandedNotebooks] = useState<Set<string>>(new Set());
     const [editing, setEditing] = useState<EditingState>(null);
     const [tempName, setTempName] = useState('');
+    const [openedAddPageMenu, setOpenedAddPageMenu] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (activeNotebookId) {
@@ -30,6 +33,18 @@ export function Sidebar({ notebooks, activeNotebookId, activePageId, dispatch, i
         inputRef.current?.focus();
         inputRef.current?.select();
     }, [editing]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setOpenedAddPageMenu(null);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [menuRef]);
 
     const handleStartEditing = (type: 'notebook' | 'page', id: string, currentName: string) => {
         setEditing({ type, id });
@@ -68,8 +83,17 @@ export function Sidebar({ notebooks, activeNotebookId, activePageId, dispatch, i
     };
 
     const handleAddNotebook = () => dispatch({ type: 'ADD_NOTEBOOK' });
-    const handleAddPage = (notebookId: string) => dispatch({ type: 'ADD_PAGE', payload: { notebookId } });
+    const handleAddPage = (notebookId: string, template: Template) => {
+        dispatch({ type: 'ADD_PAGE', payload: { notebookId, template } });
+        setOpenedAddPageMenu(null);
+    };
     const handleSelectPage = (notebookId: string, pageId: string) => dispatch({ type: 'SELECT_PAGE', payload: { notebookId, pageId } });
+    
+    const handleDeletePage = (notebookId: string, pageId: string) => {
+        if (window.confirm('Are you sure you want to delete this page? This action cannot be undone.')) {
+            dispatch({ type: 'DELETE_PAGE', payload: { notebookId, pageId } });
+        }
+    };
 
     if (!isOpen) {
         return (
@@ -113,22 +137,47 @@ export function Sidebar({ notebooks, activeNotebookId, activePageId, dispatch, i
                                 {notebook.pages.map(page => (
                                     <div 
                                         key={page.id}
-                                        onDoubleClick={() => handleStartEditing('page', page.id, page.name)}
-                                        onClick={() => handleSelectPage(notebook.id, page.id)}
-                                        className={`p-2 rounded-md text-sm cursor-pointer truncate ${activePageId === page.id ? 'bg-blue-100 text-blue-800 font-semibold' : 'hover:bg-gray-100 text-gray-600'}`}
-                                        title={page.name}
+                                        className={`flex items-center justify-between p-2 rounded-md text-sm group ${activePageId === page.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
                                     >
-                                        {editing?.type === 'page' && editing.id === page.id ? (
-                                            <input ref={inputRef} type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} onBlur={handleFinishEditing} onKeyDown={handleKeyDown} onClick={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()} className="w-full bg-gray-50 border border-blue-400 rounded-md px-1 -mx-1 text-sm"/>
-                                        ) : (
-                                            page.name
-                                        )}
+                                        <div
+                                            onDoubleClick={() => handleStartEditing('page', page.id, page.name)}
+                                            onClick={() => handleSelectPage(notebook.id, page.id)}
+                                            className={`flex-1 cursor-pointer truncate ${activePageId === page.id ? 'text-blue-800 font-semibold' : 'text-gray-600'}`}
+                                            title={page.name}
+                                        >
+                                            {editing?.type === 'page' && editing.id === page.id ? (
+                                                <input ref={inputRef} type="text" value={tempName} onChange={(e) => setTempName(e.target.value)} onBlur={handleFinishEditing} onKeyDown={handleKeyDown} onClick={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()} className="w-full bg-gray-50 border border-blue-400 rounded-md px-1 -mx-1 text-sm"/>
+                                            ) : (
+                                                page.name
+                                            )}
+                                        </div>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeletePage(notebook.id, page.id); }}
+                                            className="ml-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-600 focus:opacity-100 shrink-0"
+                                            aria-label={`Delete page ${page.name}`}
+                                            title="Delete page"
+                                        >
+                                            <TrashIcon />
+                                        </button>
                                     </div>
                                 ))}
-                                <button onClick={() => handleAddPage(notebook.id)} className="flex items-center gap-2 p-2 rounded-md text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-200 w-full mt-1">
-                                    <PlusIcon />
-                                    <span>Add Page</span>
-                                </button>
+                                <div className="relative" ref={menuRef}>
+                                    <button onClick={() => setOpenedAddPageMenu(openedAddPageMenu === notebook.id ? null : notebook.id)} className="flex items-center gap-2 p-2 rounded-md text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-200 w-full mt-1">
+                                        <PlusIcon />
+                                        <span>Add Page</span>
+                                    </button>
+                                    {openedAddPageMenu === notebook.id && (
+                                        <div className="absolute top-full mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 z-30">
+                                            <button onClick={() => handleAddPage(notebook.id, 'BLANK')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Página em Branco</button>
+                                            <button onClick={() => handleAddPage(notebook.id, 'CORNELL')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Notas Cornell</button>
+                                            <button onClick={() => handleAddPage(notebook.id, 'OUTLINING')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Método de Tópicos</button>
+                                            <button onClick={() => handleAddPage(notebook.id, 'SENTENCE_METHOD')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Método de Sentenças</button>
+                                            <button onClick={() => handleAddPage(notebook.id, 'MIND_MAP')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Mapa Mental</button>
+                                            <button onClick={() => handleAddPage(notebook.id, 'CHARTING')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Método de Gráficos</button>
+                                            <button onClick={() => handleAddPage(notebook.id, 'TEXTBOOK')} className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">Estilo Livro Didático</button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>

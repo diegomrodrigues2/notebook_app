@@ -41,20 +41,26 @@ export function Shape({ element, roughSvg, selectedTool, isSelected, pageId, onP
       }
     };
     
-    const options: Options = {
+    // Options for shapes without a fill
+    const strokeOptions: Options = {
         seed: element.seed,
         stroke: element.stroke,
         strokeWidth: element.strokeWidth,
-        fill: element.fill,
-        fillStyle: element.fillStyle,
         strokeLineDash: getStrokeDasharray(),
         roughness: element.type === 'FREEDRAW' ? 0.5 : 1,
         bowing: element.type === 'FREEDRAW' ? 0 : 1,
     };
 
+    // Options for shapes with a fill
+    const fillableOptions: Options = {
+        ...strokeOptions,
+        fill: element.fill,
+        fillStyle: element.fillStyle,
+    };
+
     if (element.type === 'RECTANGLE' && element.roundness === 'round') {
-        options.bowing = 2;
-        options.roughness = 1.5;
+        fillableOptions.bowing = 2;
+        fillableOptions.roughness = 1.5;
     }
     
     let node: SVGGElement | null = null;
@@ -62,19 +68,19 @@ export function Shape({ element, roughSvg, selectedTool, isSelected, pageId, onP
     
     switch (element.type) {
       case 'RECTANGLE':
-        node = roughSvg.rectangle(element.x, element.y, element.width, element.height, options);
+        node = roughSvg.rectangle(element.x, element.y, element.width, element.height, fillableOptions);
         break;
       case 'ELLIPSE':
-        node = roughSvg.ellipse(element.x + element.width / 2, element.y + element.height / 2, element.width, element.height, options);
+        node = roughSvg.ellipse(element.x + element.width / 2, element.y + element.height / 2, element.width, element.height, fillableOptions);
         break;
       case 'LINE': {
         const [start, end] = element.points;
-        node = roughSvg.line(start[0], start[1], end[0], end[1], options);
+        node = roughSvg.line(start[0], start[1], end[0], end[1], strokeOptions);
         break;
       }
       case 'ARROW': {
         const [start, end] = element.points;
-        node = roughSvg.line(start[0], start[1], end[0], end[1], options);
+        node = roughSvg.line(start[0], start[1], end[0], end[1], strokeOptions);
         
         const angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
         const length = Math.sqrt(Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2));
@@ -85,7 +91,7 @@ export function Shape({ element, roughSvg, selectedTool, isSelected, pageId, onP
         const p3: [number, number] = [end[0] - arrowLength * Math.cos(angle + Math.PI / 6), end[1] - arrowLength * Math.sin(angle + Math.PI / 6)];
 
         arrowHeadNode = roughSvg.polygon([p2, p1, p3], {
-            ...options,
+            ...strokeOptions,
             fill: element.stroke,
             fillStyle: 'solid',
         });
@@ -94,14 +100,14 @@ export function Shape({ element, roughSvg, selectedTool, isSelected, pageId, onP
       case 'CURVE': {
         const [start, control, end] = element.points;
         const pathData = `M${start[0]},${start[1]} Q${control[0]},${control[1]} ${end[0]},${end[1]}`;
-        node = roughSvg.path(pathData, options);
+        node = roughSvg.path(pathData, strokeOptions);
         break;
       }
       case 'FREEDRAW': {
         if (element.points.length < 2) break;
         const pathData = d3Line<[number, number]>().x(p => p[0]).y(p => p[1])(element.points);
         if (pathData) {
-            node = roughSvg.path(pathData, options);
+            node = roughSvg.path(pathData, strokeOptions);
         }
         break;
       }
@@ -130,7 +136,6 @@ export function Shape({ element, roughSvg, selectedTool, isSelected, pageId, onP
             fontSize={textElement.fontSize}
             fill={textElement.stroke}
             dominantBaseline="hanging"
-            style={{ userSelect: 'none' }}
             pointerEvents="all"
             {...gProps}
         >
