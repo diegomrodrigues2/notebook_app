@@ -43,6 +43,7 @@ export function interactionReducer(state: EditorState, action: EditorAction): Ed
               historySnapshot: null,
               resizeHandle: null,
               cameraSnapshot: null,
+              groupSnapshot: null,
           };
         }
         default:

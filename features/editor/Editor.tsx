@@ -48,7 +48,7 @@ function Editor(): React.ReactNode {
           event.preventDefault();
           setIsSpacePressed(true);
       }
-      if ((event.key === 'Delete' || event.key === 'Backspace') && state.selectedElement) {
+      if ((event.key === 'Delete' || event.key === 'Backspace') && (state.selectedElement || state.selectedIds)) {
         dispatch({ type: 'DELETE_SELECTED_ELEMENT' });
       }
 
@@ -96,7 +96,7 @@ function Editor(): React.ReactNode {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [state.selectedElement, state.activeNotebookId, state.history.present, state.interactionState]);
+  }, [state.selectedElement, state.selectedIds, state.activeNotebookId, state.history.present, state.interactionState]);
   
   return (
     <div className="flex w-full h-full">
@@ -142,6 +142,7 @@ function Editor(): React.ReactNode {
           interactionState={state.interactionState}
           selectedTool={state.selectedTool}
           selectedElement={state.selectedElement}
+          selectedIds={state.selectedIds}
           currentElementId={state.currentElementId}
           dispatch={dispatch as React.Dispatch<EditorAction>}
           camera={state.camera}

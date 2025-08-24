@@ -6,7 +6,7 @@ export function selectionReducer(state: EditorState, action: EditorAction): Edit
 
   switch (action.type) {
     case 'SELECT_TOOL':
-      return { ...state, selectedTool: action.payload, selectedElement: null };
+      return { ...state, selectedTool: action.payload, selectedElement: null, selectedIds: null };
     
     case 'SELECT_ELEMENT': {
       const { pageId, elementId } = action.payload;
@@ -18,7 +18,6 @@ export function selectionReducer(state: EditorState, action: EditorAction): Edit
       
       const newCurrentStyle = { ...state.currentStyle };
       if('stroke' in selectedElement) newCurrentStyle.stroke = selectedElement.stroke;
-      // Do not adopt strokeWidth from text elements for the global style
       if (selectedElement.type !== 'TEXT' && 'strokeWidth' in selectedElement) {
         newCurrentStyle.strokeWidth = selectedElement.strokeWidth;
       }
@@ -31,21 +30,54 @@ export function selectionReducer(state: EditorState, action: EditorAction): Edit
         newCurrentStyle.fontFamily = selectedElement.fontFamily;
       }
 
-      return { ...state, selectedElement: action.payload, selectedTool: 'SELECT', currentStyle: newCurrentStyle };
+      return { 
+        ...state, 
+        selectedElement: action.payload, 
+        selectedIds: { pageId, elementIds: [elementId] },
+        selectedTool: 'SELECT', 
+        currentStyle: newCurrentStyle 
+      };
+    }
+
+    case 'TOGGLE_ELEMENT_IN_SELECTION': {
+      const { pageId, elementId } = action.payload;
+      const pageResult = findPage(present, pageId);
+      if (!pageResult) return state;
+
+      const base = state.selectedIds && state.selectedIds.pageId === pageId
+        ? state.selectedIds.elementIds.slice()
+        : [];
+      
+      const idx = base.indexOf(elementId);
+      if (idx >= 0) {
+        base.splice(idx, 1);
+      } else {
+        base.push(elementId);
+      }
+
+      if (base.length === 0) {
+        return { ...state, selectedElement: null, selectedIds: null };
+      }
+      if (base.length === 1) {
+        return { ...state, selectedElement: { pageId, elementId: base[0] }, selectedIds: { pageId, elementIds: base } };
+      }
+      return { ...state, selectedElement: null, selectedIds: { pageId, elementIds: base } };
     }
 
     case 'CLEAR_SELECTION':
-      return { ...state, selectedElement: null };
+      return { ...state, selectedElement: null, selectedIds: null };
 
     case 'DELETE_SELECTED_ELEMENT': {
-      if (!state.selectedElement) return state;
-      const { pageId, elementId } = state.selectedElement;
+      const target = state.selectedIds ?? (state.selectedElement && { pageId: state.selectedElement.pageId, elementIds: [state.selectedElement.elementId] });
+      if (!target) return state;
+
+      const { pageId, elementIds } = target;
       const pageResult = findPage(present, pageId);
       if (!pageResult) return state;
       
-      const updatedPage = { ...pageResult.page, elements: pageResult.page.elements.filter(el => el.id !== elementId) };
+      const updatedPage = { ...pageResult.page, elements: pageResult.page.elements.filter(el => !elementIds.includes(el.id)) };
       const newPresent = updatePageInNotebooks(present, pageId, updatedPage);
-      return { ...commitHistory(state, newPresent), selectedElement: null };
+      return { ...commitHistory(state, newPresent), selectedElement: null, selectedIds: null };
     }
 
     default:

@@ -27,7 +27,13 @@ export interface EditorState {
   currentElementId: string | null;
   startPoint: { x: number; y: number } | null;
   selectedElement: { pageId: string, elementId: string } | null;
+  selectedIds: { pageId: string; elementIds: string[] } | null;
   elementSnapshot: CanvasElement | null;
+  groupSnapshot: {
+    pageId: string;
+    elements: CanvasElement[];
+    bounds: { x: number; y: number; width: number; height: number };
+  } | null;
   historySnapshot: Notebook[] | null;
   resizeHandle: ResizeHandle | null;
   camera: { x: number; y: number; zoom: number };
@@ -66,6 +72,7 @@ export type EditorAction =
   | { type: 'RESET_ZOOM' }
   | { type: 'FINISH_INTERACTION' }
   | { type: 'SELECT_ELEMENT'; payload: { pageId: string, elementId: string } }
+  | { type: 'TOGGLE_ELEMENT_IN_SELECTION'; payload: { pageId: string; elementId: string } }
   | { type: 'CLEAR_SELECTION' }
   | { type: 'DELETE_SELECTED_ELEMENT' }
   | { type: 'START_EDITING_TEXT'; payload: { pageId: string, elementId: string } }

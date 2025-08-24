@@ -12,6 +12,7 @@ interface UseCanvasInteractionProps {
   leftPage: Page | null;
   rightPage: Page | null;
   selectedElement: { pageId: string, elementId: string } | null;
+  selectedIds: { pageId: string; elementIds: string[] } | null;
   selectedTool: Tool;
   svgRef: React.RefObject<SVGSVGElement>;
 }
@@ -24,6 +25,7 @@ export const useCanvasInteraction = ({
   leftPage,
   rightPage,
   selectedElement,
+  selectedIds,
   selectedTool,
   svgRef
 }: UseCanvasInteractionProps) => {
@@ -79,14 +81,12 @@ export const useCanvasInteraction = ({
     const element = page?.elements.find(el => el.id === elementId);
 
     if (element?.type === 'TEXT') {
-      // On double-click, or single-click with Text tool, enter edit mode.
       if (event.detail === 2 || selectedTool === 'TEXT') {
          dispatch({ type: 'START_EDITING_TEXT', payload: { elementId, pageId } });
          return;
       }
     }
 
-    // NEW: double-click on shape/edge to create text/label
     if (event.detail === 2 && element) {
       if (element.type === 'RECTANGLE' || element.type === 'ELLIPSE') {
         dispatch({ type: 'CREATE_BOUND_TEXT', payload: { pageId, containerId: elementId } });
@@ -98,19 +98,24 @@ export const useCanvasInteraction = ({
       }
     }
 
-
-    // Normal selection/move logic for the 'SELECT' tool.
     if (selectedTool === 'SELECT') {
+       if (event.shiftKey) {
+         dispatch({ type: 'TOGGLE_ELEMENT_IN_SELECTION', payload: { pageId, elementId } });
+         return;
+       }
+
        const context = getInteractionContext(event);
        if (!context) return;
        
-       if(selectedElement?.elementId === elementId) {
+       const inMultiSelection = !!(selectedIds && selectedIds.pageId === pageId && selectedIds.elementIds.includes(elementId));
+
+       if (inMultiSelection || selectedElement?.elementId === elementId) {
            dispatch({ type: 'START_MOVING', payload: context.coords });
        } else {
            dispatch({ type: 'SELECT_ELEMENT', payload: { elementId, pageId } });
        }
     }
-  }, [dispatch, selectedTool, getInteractionContext, selectedElement, leftPage, rightPage]);
+  }, [dispatch, selectedTool, getInteractionContext, selectedElement, selectedIds, leftPage, rightPage]);
 
   const handleResizePointerDown = useCallback((event: React.PointerEvent, handle: ResizeHandle) => {
     event.stopPropagation();

@@ -8,6 +8,7 @@ import { EditorAction, EditorState, Page } from '../editor/editor.types';
 import { A4_WIDTH, A4_HEIGHT, PAGE_GAP } from '../../constants';
 import { useCanvasInteraction } from './hooks/useCanvasInteraction';
 import { SelectionBox } from './components/SelectionBox';
+import { GroupSelectionBox } from './components/GroupSelectionBox';
 import { TextEditor } from './components/TextEditor';
 
 interface CanvasProps {
@@ -16,6 +17,7 @@ interface CanvasProps {
   interactionState: EditorState['interactionState'];
   selectedTool: Tool;
   selectedElement: { pageId: string, elementId: string } | null;
+  selectedIds: { pageId: string; elementIds: string[] } | null;
   currentElementId: string | null;
   dispatch: React.Dispatch<EditorAction>;
   camera: { x: number; y: number; zoom: number };
@@ -28,6 +30,7 @@ export function Canvas({
   interactionState,
   selectedTool,
   selectedElement,
+  selectedIds,
   currentElementId,
   dispatch,
   camera,
@@ -58,6 +61,7 @@ export function Canvas({
     leftPage,
     rightPage,
     selectedElement,
+    selectedIds,
     selectedTool,
     svgRef,
   });
@@ -68,6 +72,19 @@ export function Canvas({
   ];
 
   const selectedElementObject = selectedElement ? allElements.find(el => el.id === selectedElement.elementId) : null;
+  
+  const groupBounds = (() => {
+    if (!selectedIds || selectedIds.elementIds.length < 2) return null;
+    const pageOffset = selectedIds.pageId === rightPage?.id ? (A4_WIDTH + PAGE_GAP) : 0;
+    const els = allElements.filter(e => e.pageId === selectedIds.pageId && selectedIds.elementIds.includes(e.id));
+    if (els.length < 2) return null;
+    const minX = Math.min(...els.map(e => e.x));
+    const minY = Math.min(...els.map(e => e.y));
+    const maxX = Math.max(...els.map(e => e.x + e.width));
+    const maxY = Math.max(...els.map(e => e.y + e.height));
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY, pageOffset };
+  })();
+
   const editingElementInfo = (interactionState === 'EDITING_TEXT' && currentElementId
     ? allElements.find(el => el.id === currentElementId && el.type === 'TEXT')
     : null) as (TextElement & { pageId: string, pageOffset: number }) | null;
@@ -82,6 +99,11 @@ export function Canvas({
         </div>
       </div>
     );
+  }
+
+  const isSelected = (id: string) => {
+    if (selectedIds) return selectedIds.elementIds.includes(id);
+    return selectedElement?.elementId === id;
   }
 
   return (
@@ -106,7 +128,7 @@ export function Canvas({
             <g>
               <rect x="0" y="0" width={A4_WIDTH} height={A4_HEIGHT} fill="white" filter="url(#shadow)" pointerEvents="none" />
               {leftPage.elements.slice().sort((a, b) => a.zIndex - b.zIndex).map(element => (
-                <Shape key={element.id} element={element} roughSvg={roughSvg} selectedTool={selectedTool} isSelected={element.id === selectedElement?.elementId} pageId={leftPage.id} onPointerDown={handleShapePointerDown} editingElementId={interactionState === 'EDITING_TEXT' ? currentElementId : null} />
+                <Shape key={element.id} element={element} roughSvg={roughSvg} selectedTool={selectedTool} isSelected={isSelected(element.id)} pageId={leftPage.id} onPointerDown={handleShapePointerDown} editingElementId={interactionState === 'EDITING_TEXT' ? currentElementId : null} />
               ))}
             </g>
           )}
@@ -115,14 +137,22 @@ export function Canvas({
             <g transform={`translate(${A4_WIDTH + PAGE_GAP}, 0)`}>
               <rect x="0" y="0" width={A4_WIDTH} height={A4_HEIGHT} fill="white" filter="url(#shadow)" pointerEvents="none" />
               {rightPage.elements.slice().sort((a, b) => a.zIndex - b.zIndex).map(element => (
-                <Shape key={element.id} element={element} roughSvg={roughSvg} selectedTool={selectedTool} isSelected={element.id === selectedElement?.elementId} pageId={rightPage.id} onPointerDown={handleShapePointerDown} editingElementId={interactionState === 'EDITING_TEXT' ? currentElementId : null}/>
+                <Shape key={element.id} element={element} roughSvg={roughSvg} selectedTool={selectedTool} isSelected={isSelected(element.id)} pageId={rightPage.id} onPointerDown={handleShapePointerDown} editingElementId={interactionState === 'EDITING_TEXT' ? currentElementId : null}/>
               ))}
             </g>
           )}
 
-          {selectedElementObject && (
+          {selectedElementObject && !groupBounds && (
             <SelectionBox
               selectedElementObject={selectedElementObject}
+              camera={camera}
+              onResizePointerDown={handleResizePointerDown}
+            />
+          )}
+
+          {groupBounds && (
+            <GroupSelectionBox
+              bounds={groupBounds}
               camera={camera}
               onResizePointerDown={handleResizePointerDown}
             />
